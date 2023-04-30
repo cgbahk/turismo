@@ -30,6 +30,7 @@ class Hotel:
     # latitude / longitude
 
 
+# TODO Make it linked
 @dataclass(frozen=True)
 class Stay:
     hotel: Hotel
@@ -37,4 +38,5 @@ class Stay:
 
 
 # TODO Make custom list-like class with hash
+# TODO Or remove it, and use linked `Stay` as node
 Itinerary = Tuple[Stay, ...]
