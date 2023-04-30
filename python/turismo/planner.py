@@ -9,6 +9,7 @@ from astar import AStar
 
 
 class ItineraryPlanner(AStar):
+    """NOTE Need to pass goal condition by ctor, not `astar()`"""
 
     @dataclass
     class Goal:
@@ -98,9 +99,24 @@ class ItineraryPlanner(AStar):
         assert orig is dest.previous
         return self._cost_of_route(orig.hotel, dest.hotel) + self._cost_of_stay(dest)
 
+    def _get_elapsed_days(self, stay: Stay) -> int:
+        ret = 0
+        cur_stay = stay
+
+        while cur_stay:
+            ret += cur_stay.days
+            cur_stay = cur_stay.previous
+
+        return ret
+
     def is_goal_reached(self, stay: Stay, _) -> bool:
-        # TODO Use `self._goal.total_days`
-        return stay.hotel.name == self._goal.final_stay_hotel.name
+        if stay.hotel.name != self._goal.final_stay_hotel.name:
+            return False
+
+        if self._get_elapsed_days(stay) != self._goal.total_days:
+            return False
+
+        return True
 
     def heuristic_cost_estimate(self, stay: Stay, _) -> float:
         return 1  # TODO
