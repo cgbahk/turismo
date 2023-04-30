@@ -7,6 +7,7 @@ name = "turismo"
 dynamic = ["version"]
 dependencies = [
   "googlemaps",
+  "astar",
 ]
 
 [tool.setuptools_scm]
