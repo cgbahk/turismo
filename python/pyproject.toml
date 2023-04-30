@@ -5,6 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "turismo"
 dynamic = ["version"]
+dependencies = [
+  "googlemaps",
+]
 
 [tool.setuptools_scm]
 root = ".."  # Relative path to git repo root directory
