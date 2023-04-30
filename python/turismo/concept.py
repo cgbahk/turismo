@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from enum import Enum
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Optional
 
 Biome = Enum("Biome", "city grass alpine desert beach")
 
@@ -30,13 +32,8 @@ class Hotel:
     # latitude / longitude
 
 
-# TODO Make it linked
 @dataclass(frozen=True)
 class Stay:
+    previous: Optional[Stay]
     hotel: Hotel
     days: int
-
-
-# TODO Make custom list-like class with hash
-# TODO Or remove it, and use linked `Stay` as node
-Itinerary = Tuple[Stay, ...]

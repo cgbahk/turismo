@@ -1,32 +1,47 @@
-from .concept import Hotel, Stay, Itinerary
+from .concept import Hotel, Stay
 from .gmwrap import GMWrap
 
-from typing import List, Dict
+from typing import Iterable, Dict, Set
 import logging
+from dataclasses import dataclass
 
 from astar import AStar
 
 
 class ItineraryPlanner(AStar):
 
-    def __init__(self, *, hotels, gmwrap: GMWrap, constants: Dict):
+    @dataclass
+    class Goal:
+        final_stay_hotel: Hotel
+        total_days: int
+
+    def __init__(self, *, hotels, goal: Goal, gmwrap: GMWrap, constants: Dict):
         self._hotels = hotels
+        self._goal = goal
         self._gmwrap = gmwrap
         self._constants = constants
 
-    def neighbors(self, itn: Itinerary) -> List[Itinerary]:
-        ret = []
+    def _get_visited_hotel_names(self, stay: Stay) -> Set[str]:
+        ret = set()
+        cur_stay = stay
 
-        visited_hotel_names = [stay.hotel.name for stay in itn]
+        while cur_stay:
+            ret.add(cur_stay.hotel.name)
+            cur_stay = cur_stay.previous
 
-        for hotel in self._hotels:
-            if hotel.name in visited_hotel_names:
+        return ret
+
+    def neighbors(self, stay: Stay) -> Iterable[Stay]:
+        visited_hotel_names = self._get_visited_hotel_names(stay)
+
+        for cand_hotel in self._hotels:
+            if cand_hotel.name in visited_hotel_names:
                 continue
 
             _, duration_in_second = self._gmwrap.get_direction_info(
-                # TODO Use `hotel`'s accurate coordinate
-                itn[-1].hotel.location.name,
-                hotel.location.name,
+                # TODO Use `Hotel`'s accurate coordinate
+                stay.hotel.location.name,
+                cand_hotel.location.name,
             )
 
             if duration_in_second > self._constants["max_driving_hour"] * 3600:
@@ -34,10 +49,12 @@ class ItineraryPlanner(AStar):
 
             # TODO Need to add location's other hotels stay days too
             # TODO Use better `days` range
-            for days in range(1, hotel.location.recommended_days + 1):
-                ret.append((*itn, Stay(hotel=hotel, days=days)))
-
-        return ret
+            for days in range(1, cand_hotel.location.recommended_days + 3):
+                yield Stay(
+                    previous=stay,
+                    hotel=cand_hotel,
+                    days=days,
+                )
 
     def _cost_of_route(self, orig: Hotel, dest: Hotel) -> float:
         ret = 0
@@ -77,12 +94,13 @@ class ItineraryPlanner(AStar):
 
         return ret
 
-    def distance_between(self, _, itn: Itinerary) -> float:
-        return self._cost_of_route(itn[-2].hotel, itn[-1].hotel) + self._cost_of_stay(itn[-1])
+    def distance_between(self, orig: Stay, dest: Stay) -> float:
+        assert orig is dest.previous
+        return self._cost_of_route(orig.hotel, dest.hotel) + self._cost_of_stay(dest)
 
-    def is_goal_reached(self, itn: Itinerary, _) -> bool:
-        # TODO Use `self._goal`
-        return itn[-1].hotel.name == self._constants["destination_hotel"]
+    def is_goal_reached(self, stay: Stay, _) -> bool:
+        # TODO Use `self._goal.total_days`
+        return stay.hotel.name == self._goal.final_stay_hotel.name
 
-    def heuristic_cost_estimate(self, itn: Itinerary, _) -> float:
+    def heuristic_cost_estimate(self, stay: Stay, _) -> float:
         return 1  # TODO
