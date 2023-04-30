@@ -39,15 +39,6 @@ class ItineraryPlanner(AStar):
 
         return ret
 
-    def distance_between(self, _, itn: Itinerary) -> float:
-        return self._cost_of_route(itn[-2].hotel, itn[-1].hotel) + self._cost_of_stay(itn[-1])
-
-    def is_goal_reached(self, itn: Itinerary, _) -> bool:
-        return itn[-1].hotel.name == self._constants["destination_hotel"]
-
-    def heuristic_cost_estimate(self, itn: Itinerary, _) -> float:
-        return 1  # TODO
-
     def _cost_of_route(self, orig: Hotel, dest: Hotel) -> float:
         ret = 0
 
@@ -85,3 +76,13 @@ class ItineraryPlanner(AStar):
         ret -= joy_benefit
 
         return ret
+
+    def distance_between(self, _, itn: Itinerary) -> float:
+        return self._cost_of_route(itn[-2].hotel, itn[-1].hotel) + self._cost_of_stay(itn[-1])
+
+    def is_goal_reached(self, itn: Itinerary, _) -> bool:
+        # TODO Use `self._goal`
+        return itn[-1].hotel.name == self._constants["destination_hotel"]
+
+    def heuristic_cost_estimate(self, itn: Itinerary, _) -> float:
+        return 1  # TODO
