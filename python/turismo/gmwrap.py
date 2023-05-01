@@ -19,7 +19,7 @@ class GMWrap:
     )
 
     _map_size = (640, 480)
-    _max_points_in_path_to_display = 764
+    _max_points_in_path_to_display = 300
 
     def __init__(self, *, api_key: str, direction_stash_csv_path: Path):
         self._client = googlemaps.Client(key=api_key)
