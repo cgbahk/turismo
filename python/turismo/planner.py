@@ -99,7 +99,7 @@ class ItineraryPlanner(AStar):
             joy_half_life_in_day = 1  # TODO Take value from input
             joy_benefit = \
                 location.initial_joy * \
-                0.5 ** (stay.days / joy_half_life_in_day)
+                0.5 ** ((stay.days - 1) / joy_half_life_in_day)
             logging.debug(f"- {joy_benefit=}")
         ret -= joy_benefit
 
