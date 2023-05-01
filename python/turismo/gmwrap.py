@@ -80,7 +80,7 @@ class GMWrap:
             cur_points = googlemaps.convert.decode_polyline(
                 directions[0]["overview_polyline"]["points"]
             )
-            points.extend(cur_points)
+            points = cur_points + points
 
             cur_stay = pre_stay
 
