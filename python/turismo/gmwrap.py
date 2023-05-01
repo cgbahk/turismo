@@ -58,7 +58,12 @@ class GMWrap:
 
         cur_stay = stay
         while cur_stay:
-            ret.append(googlemaps.maps.StaticMapMarker(locations=[cur_stay.hotel.location.name]))
+            ret.append(
+                googlemaps.maps.StaticMapMarker(
+                    locations=[cur_stay.hotel.location.name],
+                    label=str(cur_stay.days),
+                )
+            )
             cur_stay = cur_stay.previous
 
         return ret
