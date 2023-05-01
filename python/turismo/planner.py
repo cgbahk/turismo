@@ -34,6 +34,7 @@ class ItineraryPlanner(AStar):
 
     def neighbors(self, stay: Stay) -> Iterable[Stay]:
         visited_hotel_names = self._get_visited_hotel_names(stay)
+        elapsed_days = self._get_elapsed_days(stay)
 
         for cand_hotel in self._hotels:
             if cand_hotel.name in visited_hotel_names:
@@ -51,6 +52,9 @@ class ItineraryPlanner(AStar):
             # TODO Need to add location's other hotels stay days too
             # TODO Use better `days` range
             for days in range(1, cand_hotel.location.recommended_days + 3):
+                if elapsed_days + days > self._goal.total_days:
+                    continue
+
                 yield Stay(
                     previous=stay,
                     hotel=cand_hotel,
