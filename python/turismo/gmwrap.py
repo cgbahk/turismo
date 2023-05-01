@@ -8,7 +8,8 @@ import googlemaps
 
 class GMWrap:
     _fixed_departure_time = datetime.strptime(
-        "2024-01-01 00:00:00",  # Actual value is pointless
+        # TODO Check this means local timezone
+        "2024-01-01 11:00:00",
         "%Y-%m-%d %H:%M:%S",
     )
 
@@ -37,6 +38,7 @@ class GMWrap:
         distance_in_meter = result[0]["legs"][0]['distance']['value']
         duration_in_second = result[0]["legs"][0]['duration']['value']
 
+        # TODO Stash full result, not just distance and duration, say directory of json
         with open(self._direction_stash_csv_path, "a") as stash_file:
             stash_file.write(f"{origin},{destination},{distance_in_meter},{duration_in_second}")
             stash_file.write("\n")

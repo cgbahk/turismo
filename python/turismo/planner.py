@@ -61,7 +61,7 @@ class ItineraryPlanner(AStar):
         ret = 0
 
         distance_in_meter, duration_in_second = self._gmwrap.get_direction_info(
-            # TODO Use `hotel`'s accurate coordinate
+            # TODO Use `Hotel`'s accurate coordinate
             orig.location.name,
             dest.location.name,
         )
@@ -116,6 +116,7 @@ class ItineraryPlanner(AStar):
         if self._get_elapsed_days(stay) != self._goal.total_days:
             return False
 
+        # TODO Get more candidates, choose best
         return True
 
     def heuristic_cost_estimate(self, stay: Stay, _) -> float:
