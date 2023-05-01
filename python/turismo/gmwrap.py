@@ -1,7 +1,12 @@
 """`googlemaps` wrapper"""
 
+from .concept import Stay
+
 from pathlib import Path
 from datetime import datetime
+import random
+import io
+import logging
 
 import googlemaps
 
@@ -12,6 +17,9 @@ class GMWrap:
         "2024-01-01 11:00:00",
         "%Y-%m-%d %H:%M:%S",
     )
+
+    _map_size = (640, 480)
+    _max_points_in_path_to_display = 764
 
     def __init__(self, *, api_key: str, direction_stash_csv_path: Path):
         self._client = googlemaps.Client(key=api_key)
@@ -44,3 +52,73 @@ class GMWrap:
             stash_file.write("\n")
 
         return distance_in_meter, duration_in_second
+
+    def _make_markers(self, stay: Stay):
+        ret = []
+
+        cur_stay = stay
+        while cur_stay:
+            ret.append(googlemaps.maps.StaticMapMarker(locations=[cur_stay.hotel.location.name]))
+            cur_stay = cur_stay.previous
+
+        return ret
+
+    def _make_path(self, stay: Stay):
+        points = []
+
+        cur_stay = stay
+        while cur_stay.previous:
+            pre_stay = cur_stay.previous
+
+            directions = self._client.directions(
+                # TODO Use `Hotel`'s accurate coordinate
+                pre_stay.hotel.location.name,
+                cur_stay.hotel.location.name,
+                departure_time=self._fixed_departure_time,
+            )
+
+            cur_points = googlemaps.convert.decode_polyline(
+                directions[0]["overview_polyline"]["points"]
+            )
+            points.extend(cur_points)
+
+            cur_stay = pre_stay
+
+        # TODO use 'try again on failure' approach, on ratio based reduction
+        if len(points) > self._max_points_in_path_to_display:
+            final_points = [
+                points[i] for i in
+                sorted(random.sample(range(len(points)), self._max_points_in_path_to_display))
+            ]
+        else:
+            final_points = points
+
+        return googlemaps.maps.StaticMapPath(points=final_points)
+
+    def download_itinerary_map(self, stay: Stay, output_png_path: Path):
+        output_png_path = Path(output_png_path)
+        assert output_png_path.suffix == ".png"
+
+        res_iter = self._client.static_map(
+            size=self._map_size,
+            path=self._make_path(stay),
+            markers=self._make_markers(stay),
+            format="png",
+        )
+
+        html_head_magic = b"<!DOCTYPE html>"  # Hard-coded
+        with io.BytesIO() as response:
+            for chunk in res_iter:
+                response.write(chunk)
+
+            with response.getbuffer() as view:
+                response_is_html = view[:len(html_head_magic)].tobytes() == html_head_magic
+
+            if response_is_html:
+                logging.warning("HTML generated - This may mean failure to the static map API")
+                output_path = output_png_path.parent / "error.html"
+            else:
+                output_path = output_png_path
+
+            with open(output_path, "wb") as map_file:
+                map_file.write(response.getbuffer())
