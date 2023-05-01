@@ -15,12 +15,19 @@ class ItineraryPlanner(AStar):
     class Goal:
         final_stay_hotel: Hotel
         total_days: int
+        max_try: int
 
-    def __init__(self, *, hotels, goal: Goal, gmwrap: GMWrap, constants: Dict):
+    # TODO Can `initial` be removed?
+    def __init__(self, *, hotels, goal: Goal, gmwrap: GMWrap, constants: Dict, initial: Stay):
         self._hotels = hotels
-        self._goal = goal
         self._gmwrap = gmwrap
         self._constants = constants
+        self._cost_of = {initial: 0}
+
+        # Goal related
+        self._goal = goal
+        self._cur_try_count = 0
+        self._cur_min_cost = float("inf")
 
     def _get_visited_hotel_names(self, stay: Stay) -> Set[str]:
         ret = set()
@@ -107,7 +114,13 @@ class ItineraryPlanner(AStar):
 
     def distance_between(self, orig: Stay, dest: Stay) -> float:
         assert orig is dest.previous
-        return self._cost_of_route(orig.hotel, dest.hotel) + self._cost_of_stay(dest)
+        assert orig in self._cost_of
+        assert dest not in self._cost_of
+
+        ret = self._cost_of_route(orig.hotel, dest.hotel) + self._cost_of_stay(dest)
+        self._cost_of[dest] = self._cost_of[orig] + ret
+
+        return ret
 
     def _get_elapsed_days(self, stay: Stay) -> int:
         ret = 0
@@ -126,7 +139,27 @@ class ItineraryPlanner(AStar):
         if self._get_elapsed_days(stay) != self._goal.total_days:
             return False
 
-        # TODO Get more candidates, choose best
+        # At this point, "some" goal reached, but may try more for better result
+        #
+        # TODO Ready for search space exhaust, which is possible when best solution found early.
+
+        if self._cost_of[stay] >= self._cur_min_cost:
+            return False
+
+        self._cur_min_cost = self._cost_of[stay]
+
+        self._cur_try_count += 1
+
+        logging.debug(f"Try #{self._cur_try_count} / cost {self._cost_of[stay]}")
+        cur_stay = stay
+        while cur_stay:
+            logging.debug(f"{cur_stay.hotel.name}\t{cur_stay.days}")
+            cur_stay = cur_stay.previous
+        logging.debug("\n")
+
+        if self._cur_try_count < self._goal.max_try:
+            return False
+
         return True
 
     def heuristic_cost_estimate(self, stay: Stay, _) -> float:
