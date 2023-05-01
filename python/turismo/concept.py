@@ -14,6 +14,7 @@ class Location:
     initial_joy: float
 
     # TODO
+    # joy_half_life_in_day: float
     # cost_of_living_per_day: float  # Food, coffee, ...
     # merit: float  # e.g.) merit of special activity in the location
     # biome: Biome

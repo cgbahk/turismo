@@ -89,7 +89,10 @@ class ItineraryPlanner(AStar):
         logging.debug(f"+ {hotel_cost=}")
         ret += hotel_cost
 
-        joy_benefit = location.initial_joy * min(stay.days, location.recommended_days)
+        joy_half_life_in_day = 1  # TODO Take value from input
+        joy_benefit = \
+            location.initial_joy * \
+            0.5 ** (min(stay.days, location.recommended_days) / joy_half_life_in_day)
         logging.debug(f"- {joy_benefit=}")
         ret -= joy_benefit
 
