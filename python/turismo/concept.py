@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from dataclasses import dataclass
-from typing import Tuple, Optional
+from typing import Optional
 
 Biome = Enum("Biome", "city grass alpine desert beach")
 
